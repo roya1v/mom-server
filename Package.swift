@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "vsap",
+    name: "vsap-server",
     platforms: [
        .macOS(.v10_15)
     ],
