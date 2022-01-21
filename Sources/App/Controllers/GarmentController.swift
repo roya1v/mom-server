@@ -14,6 +14,9 @@ struct GarmentController: RouteCollection {
         garments.get(use: index)
         garments.post(use: create)
         garments.put(use: update)
+        garments.group(":garmentID") { garment in
+            garment.delete(use: delete)
+        }
     }
 
     func index(req: Request) throws -> EventLoopFuture<[Garment]> {
@@ -33,5 +36,12 @@ struct GarmentController: RouteCollection {
         test.state = garment.state
         try await test.update(on: req.db)
         return .accepted
+    }
+
+    func delete(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        return Garment.find(req.parameters.get("garmentID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { $0.delete(on: req.db) }
+            .transform(to: .ok)
     }
 }
