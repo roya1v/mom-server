@@ -11,6 +11,7 @@ public func configure(_ app: Application) throws {
 
     app.migrations.add(CreateTodo())
     app.migrations.add(CreateGarment())
+    app.migrations.add(CreateStorageLocation())
 
     // register routes
     try routes(app)
