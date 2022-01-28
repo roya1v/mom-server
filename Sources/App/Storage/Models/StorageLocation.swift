@@ -31,4 +31,5 @@ enum StorageType: String, Codable {
     case room
     case furniture
     case box
+    case other
 }
