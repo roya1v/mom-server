@@ -23,5 +23,12 @@ final class StorageLocation: Model, Content {
     @OptionalParent(key: "parent")
     var parent: StorageLocation?
 
-    //TODO: - Add type
+    @Enum(key: "type")
+    var type: StorageType
+}
+
+enum StorageType: String, Codable {
+    case room
+    case furniture
+    case box
 }
