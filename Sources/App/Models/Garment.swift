@@ -58,7 +58,7 @@ enum GarmentType: String, Codable {
     case tShirt
     case sweater
     case pants
-    case underware
+    case underwear
     case socks
     case shoes
     case hat
