@@ -16,36 +16,41 @@ struct StorageLocationController: RouteCollection {
         location.get(use: rootIndex)
         location.post(use: create)
         location.group(":locationID") { location in
-            location.get(use: arbitraryIndex)
-            location.grouped("chain").get(use: index)
+            location.get(use: index)
+            location.grouped("chain").get(use: chain)
+            location.delete(use: delete)
         }
     }
 
-    // MARK: - Locations
+    // MARK: - Fetch locations
 
-    func rootIndex(req: Request) throws -> EventLoopFuture<[StorageLocation]> {
+    func rootIndex(req: Request) async throws -> [StorageLocationJSONRepresentable] {
         if let sql = req.db as? SQLDatabase {
-            return sql
+            return try await sql
                 .raw("SELECT * FROM storage_locations WHERE parent IS NULL")
                 .all(decoding: StorageLocation.self)
+                .map { $0.jsonRepresentable() }
         } else {
             throw Abort(.imATeapot)
         }
     }
 
-    func arbitraryIndex(req: Request) throws -> EventLoopFuture<[StorageLocation]> {
+    func index(req: Request) async throws -> [StorageLocationJSONRepresentable] {
         guard let parentID = UUID(uuidString: req.parameters.get("locationID") ?? "") else {
             throw Abort(.badRequest)
         }
 
-        return StorageLocation
+        return try await StorageLocation
             .query(on: req.db)
             .with(\.$parent)
             .filter(\.$parent.$id == parentID)
             .all()
+            .compactMap { $0.jsonRepresentable() }
     }
 
-    func index(req: Request) async throws -> [StorageLocation] {
+    // MARK: - Fetch chain of locations to location
+
+    func chain(req: Request) async throws -> [StorageLocation] {
         guard let locationID = UUID(uuidString: req.parameters.get("locationID") ?? ""),
               let location = try await StorageLocation
                 .query(on: req.db)
@@ -56,19 +61,14 @@ struct StorageLocationController: RouteCollection {
         }
 
         var chain = [location]
-
-        print("LOCATION PARENT: \(location.parent)")
         var parent = try await getParent(for: location, on: req.db)
-
         if parent == nil {
             return [location]
         }
-
         while parent != nil {
             chain.append(parent!)
             parent = try await getParent(for: parent!, on: req.db)
         }
-
         return chain
     }
 
@@ -83,15 +83,22 @@ struct StorageLocationController: RouteCollection {
             .first()
     }
 
-    func create(req: Request) throws -> EventLoopFuture<StorageLocation> {
-        let location = try req.content.decode(StorageLocation.self)
-        return location.save(on: req.db).map { location }
+    // MARK: - Create
+
+    func create(req: Request) async throws -> StorageLocationJSONRepresentable {
+        let locationRep = try req.content.decode(StorageLocationJSONRepresentable.self)
+
+        let location = StorageLocation(id: nil, tag: locationRep.tag, description: locationRep.description, parentID: locationRep.parent?.id, type: locationRep.type)
+        try await location.save(on: req.db)
+        return location.jsonRepresentable()
     }
+
+    // MARK: - Delete
 
     func delete(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         return StorageLocation.find(req.parameters.get("locationID"), on: req.db)
             .unwrap(or: Abort(.notFound))
-            .flatMap { $0.delete(on: req.db) }
+            .flatMap { $0.delete(on: req.db)}
             .transform(to: .ok)
     }
 }

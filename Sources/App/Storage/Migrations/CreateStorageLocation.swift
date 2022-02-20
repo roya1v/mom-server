@@ -14,6 +14,7 @@ struct CreateStorageLocation: Migration {
             .field("tag", .string, .required)
             .field("description", .string)
             .field("parent", .uuid, .references(StorageLocation.schema, "id"))
+            .foreignKey("parent", references: StorageLocation.schema, "id", onDelete: .cascade)
             .field("type", .string, .required)
             .create()
     }
