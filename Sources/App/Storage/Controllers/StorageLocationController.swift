@@ -50,7 +50,7 @@ struct StorageLocationController: RouteCollection {
 
     // MARK: - Fetch chain of locations to location
 
-    func chain(req: Request) async throws -> [StorageLocation] {
+    func chain(req: Request) async throws -> [StorageLocationJSONRepresentable] {
         guard let locationID = UUID(uuidString: req.parameters.get("locationID") ?? ""),
               let location = try await StorageLocation
                 .query(on: req.db)
@@ -64,12 +64,14 @@ struct StorageLocationController: RouteCollection {
         var parent = try await getParent(for: location, on: req.db)
         if parent == nil {
             return [location]
+                .map { $0.jsonRepresentable() }
         }
         while parent != nil {
             chain.append(parent!)
             parent = try await getParent(for: parent!, on: req.db)
         }
         return chain
+            .map { $0.jsonRepresentable() }
     }
 
     private func getParent(for location: StorageLocation, on db: Database) async throws -> StorageLocation? {
