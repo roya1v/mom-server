@@ -20,7 +20,11 @@ struct GarmentController: RouteCollection {
     }
 
     func index(req: Request) throws -> EventLoopFuture<[Garment]> {
-        return Garment.query(on: req.db).all()
+        return Garment
+            .query(on: req.db)
+            .sort(\.$state)
+            .sort(\.$type)
+            .all()
     }
 
     func create(req: Request) throws -> EventLoopFuture<Garment> {
