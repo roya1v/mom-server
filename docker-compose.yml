@@ -16,6 +16,7 @@ version: '3.7'
 
 volumes:
   db_data:
+  minio_storage:
 
 x-shared_environment: &shared_environment
   LOG_LEVEL: ${LOG_LEVEL:-debug}
@@ -31,6 +32,7 @@ services:
       context: .
     depends_on:
       - db
+      - storage
     environment:
       <<: *shared_environment
     ports:
@@ -70,3 +72,15 @@ services:
       POSTGRES_DB: vapor_database
     ports:
       - '5432:5432'
+  storage:
+    image: minio/minio
+    volumes:
+      - minio_storage:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server --console-address ":9001" /data
+    
