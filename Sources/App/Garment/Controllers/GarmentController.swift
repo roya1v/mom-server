@@ -7,7 +7,6 @@
 
 import Fluent
 import Vapor
-import Network
 import SotoS3
 
 struct GarmentController: RouteCollection {
