@@ -97,10 +97,11 @@ struct StorageLocationController: RouteCollection {
 
     // MARK: - Delete
 
-    func delete(req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        return StorageLocation.find(req.parameters.get("locationID"), on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .flatMap { $0.delete(on: req.db)}
-            .transform(to: .ok)
+    func delete(req: Request) async throws -> HTTPStatus {
+        guard let location = try await StorageLocation.find(req.parameters.get("locationID"), on: req.db) else {
+            throw Abort(.notFound)
+        }
+        try await location.delete(on: req.db)
+        return .ok
     }
 }

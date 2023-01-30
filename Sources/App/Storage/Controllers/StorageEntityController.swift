@@ -46,15 +46,17 @@ struct StorageEntityController: RouteCollection {
             .map { $0.getJson() }
     }
 
-    func create(req: Request) throws -> EventLoopFuture<StorageEntity> {
+    func create(req: Request) async throws -> StorageEntityJson {
         let entity = try req.content.decode(StorageEntity.self)
-        return entity.save(on: req.db).map { entity }
+        try await entity.save(on: req.db)
+        return entity
     }
 
-    func delete(req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        return StorageEntity.find(req.parameters.get("entityID"), on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .flatMap { $0.delete(on: req.db) }
-            .transform(to: .ok)
+    func delete(req: Request) async throws -> HTTPStatus {
+        guard let entity = try await StorageEntity.find(req.parameters.get("entityID"), on: req.db) else {
+            throw Abort(.notFound)
+        }
+        try await entity.delete(on: req.db)
+        return .ok
     }
 }
