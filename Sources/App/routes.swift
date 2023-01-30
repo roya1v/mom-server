@@ -6,6 +6,5 @@ func routes(_ app: Application) throws {
         return "It works!"
     }
 
-    try app.register(collection: GarmentController())
     try app.register(collection: StorageController())
 }
