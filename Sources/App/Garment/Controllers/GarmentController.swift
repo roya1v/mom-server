@@ -7,6 +7,7 @@
 
 import Fluent
 import Vapor
+import SotoS3
 
 struct GarmentController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
@@ -16,7 +17,32 @@ struct GarmentController: RouteCollection {
         garments.put(use: update)
         garments.group(":garmentID") { garment in
             garment.delete(use: delete)
+            garment.grouped("image").post(use: addImage)
+            garment.grouped("image").get(use: getImage)
         }
+    }
+
+    func addImage(req: Request) async throws -> HTTPStatus {
+        guard let id = req.parameters.get("garmentID"),
+              let _ = try? await Garment.find(UUID(uuidString: id), on: req.db) else {
+            return .notFound
+        }
+
+        try await req.minio.put(data: req.body.data!, bucket: "garment", key: "\(id).jpg")
+        return .accepted
+    }
+
+    func getImage(req: Request) async throws -> Response {
+        guard let id = req.parameters.get("garmentID"),
+              let _ = try? await Garment.find(UUID(uuidString: id), on: req.db) else {
+            return Response(status: .notFound)
+        }
+
+        let imageData = try await req.minio.get(bucket: "garment", key: "\(id).jpg")
+        let resp = Response()
+        resp.body = Response.Body(data: imageData)
+
+        return resp
     }
 
     func index(req: Request) throws -> EventLoopFuture<[Garment]> {
