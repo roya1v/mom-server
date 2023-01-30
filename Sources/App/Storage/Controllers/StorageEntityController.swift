@@ -25,15 +25,15 @@ struct StorageEntityController: RouteCollection {
 
     // MARK: - Locations
 
-    func indexAll(req: Request) async throws -> [StorageEntityJSONRepresentable] {
+    func indexAll(req: Request) async throws -> [StorageEntityJson] {
         return try await StorageEntity
             .query(on: req.db)
             .with(\.$location)
             .all()
-            .map { $0.jsonRepresentable() }
+            .map { $0.getJson() }
     }
 
-    func index(req: Request) async throws -> [StorageEntityJSONRepresentable] {
+    func index(req: Request) async throws -> [StorageEntityJson] {
         guard let locationID = UUID(uuidString: req.parameters.get("locationID") ?? "") else {
             throw Abort(.badRequest)
         }
@@ -43,7 +43,7 @@ struct StorageEntityController: RouteCollection {
             .with(\.$location)
             .filter(\.$location.$id == locationID)
             .all()
-            .map { $0.jsonRepresentable() }
+            .map { $0.getJson() }
     }
 
     func create(req: Request) throws -> EventLoopFuture<StorageEntity> {

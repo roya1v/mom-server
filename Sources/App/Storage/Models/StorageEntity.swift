@@ -24,21 +24,21 @@ final class StorageEntity: Model, Content {
     @Parent(key: "location")
     var location: StorageLocation
 
-    func jsonRepresentable() -> StorageEntityJSONRepresentable {
-        return StorageEntityJSONRepresentable(from: self)
+    func getJson() -> StorageEntityJson {
+        return StorageEntityJson(from: self)
     }
 }
 
-final class StorageEntityJSONRepresentable: Content {
+final class StorageEntityJson: Content {
     var id: UUID?
     var name: String
     var description: String?
-    var location: StorageLocationJSONRepresentable
+    var location: StorageLocationJson
 
     init(from entity: StorageEntity) {
         self.id = entity.id
         self.name = entity.name
         self.description = entity.description
-        self.location = entity.location.jsonRepresentable()
+        self.location = entity.location.getJson()
     }
 }

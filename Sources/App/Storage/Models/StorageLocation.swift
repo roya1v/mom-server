@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  StorageLocation.swift
 //  
 //
 //  Created by Mike Shevelinsky on 24.01.2022.
@@ -37,19 +37,19 @@ final class StorageLocation: Model, Content {
         self.type = type
     }
 
-    func jsonRepresentable() -> StorageLocationJSONRepresentable {
-        return StorageLocationJSONRepresentable(with: self)
+    func getJson() -> StorageLocationJson {
+        return StorageLocationJson(with: self)
     }
 }
 
-final class StorageLocationJSONRepresentable: Content {
+final class StorageLocationJson: Content {
     var id: UUID?
 
     var tag: String
 
     var description: String?
 
-    var parent: StorageLocationJSONRepresentable?
+    var parent: StorageLocationJson?
 
     var type: StorageType
 
@@ -59,7 +59,7 @@ final class StorageLocationJSONRepresentable: Content {
         self.description = location.description
         self.type = location.type
         if let parent2 = location.parent {
-            self.parent = StorageLocationJSONRepresentable(with: parent2)
+            self.parent = StorageLocationJson(with: parent2)
         }
     }
 
