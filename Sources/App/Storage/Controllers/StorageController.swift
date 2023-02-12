@@ -17,5 +17,4 @@ struct StorageController: RouteCollection {
         try storage.register(collection: StorageLocationController())
         try storage.register(collection: StorageEntityController())
     }
-
 }

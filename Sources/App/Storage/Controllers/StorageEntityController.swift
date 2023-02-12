@@ -23,8 +23,7 @@ struct StorageEntityController: RouteCollection {
         }
     }
 
-    // MARK: - Locations
-
+    /// Query all entities
     func indexAll(req: Request) async throws -> [StorageEntityJson] {
         return try await StorageEntity
             .query(on: req.db)
@@ -33,6 +32,7 @@ struct StorageEntityController: RouteCollection {
             .map { $0.getJson() }
     }
 
+    /// Query all entities at a specific location
     func index(req: Request) async throws -> [StorageEntityJson] {
         guard let locationID = UUID(uuidString: req.parameters.get("locationID") ?? "") else {
             throw Abort(.badRequest)
@@ -46,12 +46,14 @@ struct StorageEntityController: RouteCollection {
             .map { $0.getJson() }
     }
 
-    func create(req: Request) async throws -> StorageEntityJson {
+    /// Create new entity
+    func create(req: Request) async throws -> StorageEntity {
         let entity = try req.content.decode(StorageEntity.self)
         try await entity.save(on: req.db)
         return entity
     }
 
+    /// Delete a specific entity
     func delete(req: Request) async throws -> HTTPStatus {
         guard let entity = try await StorageEntity.find(req.parameters.get("entityID"), on: req.db) else {
             throw Abort(.notFound)

@@ -22,8 +22,7 @@ struct StorageLocationController: RouteCollection {
         }
     }
 
-    // MARK: - Fetch locations
-
+    /// Query root locations
     func rootIndex(req: Request) async throws -> [StorageLocationJson] {
         if let sql = req.db as? SQLDatabase {
             return try await sql
@@ -35,6 +34,7 @@ struct StorageLocationController: RouteCollection {
         }
     }
 
+    /// Query child locations of a location
     func index(req: Request) async throws -> [StorageLocationJson] {
         guard let parentID = UUID(uuidString: req.parameters.get("locationID") ?? "") else {
             throw Abort(.badRequest)
@@ -48,8 +48,7 @@ struct StorageLocationController: RouteCollection {
             .compactMap { $0.getJson() }
     }
 
-    // MARK: - Fetch chain of locations to location
-
+    /// Query a chain of location till a location
     func chain(req: Request) async throws -> [StorageLocationJson] {
         guard let locationID = UUID(uuidString: req.parameters.get("locationID") ?? ""),
               let location = try await StorageLocation
@@ -85,8 +84,7 @@ struct StorageLocationController: RouteCollection {
             .first()
     }
 
-    // MARK: - Create
-
+    /// Create a location
     func create(req: Request) async throws -> StorageLocationJson {
         let locationRep = try req.content.decode(StorageLocationJson.self)
 
@@ -95,8 +93,7 @@ struct StorageLocationController: RouteCollection {
         return location.getJson()
     }
 
-    // MARK: - Delete
-
+    /// Delete a location
     func delete(req: Request) async throws -> HTTPStatus {
         guard let location = try await StorageLocation.find(req.parameters.get("locationID"), on: req.db) else {
             throw Abort(.notFound)
