@@ -17,6 +17,8 @@ struct StorageEntityController: RouteCollection {
         entities.post(use: create)
         entities.group(":entityID") { entity in
             entity.delete(use: delete)
+            entity.post("image", use: addImage)
+            entity.get("image", use: getImage)
         }
         entities.group(":locationID") { entity in
             entity.get(use: index)
@@ -53,7 +55,36 @@ struct StorageEntityController: RouteCollection {
         return entity
     }
 
-    /// Delete a specific entity
+    /// Add image for an entity
+    func addImage(req: Request) async throws -> HTTPStatus {
+        guard let entity = try await StorageEntity.find(req.parameters.get("entityID"), on: req.db),
+              let id = entity.id else {
+            throw Abort(.notFound)
+        }
+
+        guard let imageData = req.body.data else {
+            throw Abort(.badRequest)
+        }
+
+        try await req.minio.put(data: imageData, bucket: "mom", key: "\(id).jpg")
+        return .accepted
+    }
+
+    /// Get image for an entity
+    func getImage(req: Request) async throws -> Response {
+        guard let entity = try await StorageEntity.find(req.parameters.get("entityID"), on: req.db),
+              let id = entity.id else {
+            throw Abort(.notFound)
+        }
+
+        let imageData = try await req.minio.get(bucket: "mom", key: "\(id).jpg")
+        let resp = Response()
+        resp.body = Response.Body(data: imageData)
+
+        return resp
+    }
+
+    /// Delete an entity
     func delete(req: Request) async throws -> HTTPStatus {
         guard let entity = try await StorageEntity.find(req.parameters.get("entityID"), on: req.db) else {
             throw Abort(.notFound)

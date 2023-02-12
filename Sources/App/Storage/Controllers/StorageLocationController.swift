@@ -19,6 +19,8 @@ struct StorageLocationController: RouteCollection {
             location.get(use: index)
             location.grouped("chain").get(use: chain)
             location.delete(use: delete)
+            location.post("image", use: addImage)
+            location.get("image", use: getImage)
         }
     }
 
@@ -84,13 +86,42 @@ struct StorageLocationController: RouteCollection {
             .first()
     }
 
-    /// Create a location
+    /// Create new location
     func create(req: Request) async throws -> StorageLocationJson {
         let locationRep = try req.content.decode(StorageLocationJson.self)
 
         let location = StorageLocation(id: nil, tag: locationRep.tag, description: locationRep.description, parentID: locationRep.parent?.id, type: locationRep.type)
         try await location.save(on: req.db)
         return location.getJson()
+    }
+
+    /// Add image for a location
+    func addImage(req: Request) async throws -> HTTPStatus {
+        guard let location = try await StorageLocation.find(req.parameters.get("locationID"), on: req.db),
+              let id = location.id else {
+            throw Abort(.notFound)
+        }
+
+        guard let imageData = req.body.data else {
+            throw Abort(.badRequest)
+        }
+
+        try await req.minio.put(data: imageData, bucket: "mom", key: "\(id).jpg")
+        return .accepted
+    }
+
+    /// Get image for a location
+    func getImage(req: Request) async throws -> Response {
+        guard let location = try await StorageLocation.find(req.parameters.get("locationID"), on: req.db),
+              let id = location.id else {
+            throw Abort(.notFound)
+        }
+
+        let imageData = try await req.minio.get(bucket: "mom", key: "\(id).jpg")
+        let resp = Response()
+        resp.body = Response.Body(data: imageData)
+
+        return resp
     }
 
     /// Delete a location
