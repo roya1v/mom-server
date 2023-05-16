@@ -19,8 +19,6 @@ struct StorageEntityController: RouteCollection {
             entity.delete(use: delete)
             entity.post("image", use: addImage)
             entity.get("image", use: getImage)
-        }
-        entities.group(":locationID") { entity in
             entity.get(use: index)
         }
     }
@@ -36,7 +34,7 @@ struct StorageEntityController: RouteCollection {
 
     /// Query all entities at a specific location
     func index(req: Request) async throws -> [StorageEntityJson] {
-        guard let locationID = UUID(uuidString: req.parameters.get("locationID") ?? "") else {
+        guard let locationID = UUID(uuidString: req.parameters.get("entityID") ?? "") else {
             throw Abort(.badRequest)
         }
 
