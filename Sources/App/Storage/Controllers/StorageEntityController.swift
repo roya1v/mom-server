@@ -28,6 +28,7 @@ struct StorageEntityController: RouteCollection {
         return try await StorageEntity
             .query(on: req.db)
             .with(\.$location)
+            .with(\.$expiration)
             .all()
             .map { $0.getJson() }
     }
@@ -42,15 +43,28 @@ struct StorageEntityController: RouteCollection {
             .query(on: req.db)
             .with(\.$location)
             .filter(\.$location.$id == locationID)
+            .with(\.$expiration)
             .all()
             .map { $0.getJson() }
     }
 
     /// Create new entity
-    func create(req: Request) async throws -> StorageEntity {
-        let entity = try req.content.decode(StorageEntity.self)
+    func create(req: Request) async throws -> StorageEntityJson {
+        let jsonEntity = try req.content.decode(StorageEntityJson.self)
+        let entity = StorageEntity()
+        entity.name = jsonEntity.name
+        entity.description = jsonEntity.description
+        entity.$location.id = jsonEntity.location.id!
+        
+        if let expirationDate = jsonEntity.expiration {
+            let expirationEntity = Expiration(date: expirationDate)
+            try await expirationEntity.save(on: req.db)
+            entity.$expiration.id = expirationEntity.id
+        }
         try await entity.save(on: req.db)
-        return entity
+        try await entity.$location.load(on: req.db)
+        try await entity.$expiration.load(on: req.db)
+        return entity.getJson()
     }
 
     /// Add image for an entity
@@ -87,6 +101,8 @@ struct StorageEntityController: RouteCollection {
         guard let entity = try await StorageEntity.find(req.parameters.get("entityID"), on: req.db) else {
             throw Abort(.notFound)
         }
+        try await entity.$expiration.load(on: req.db)
+        try await entity.expiration?.delete(on: req.db)
         try await entity.delete(on: req.db)
         return .ok
     }

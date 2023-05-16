@@ -19,6 +19,7 @@ public func configure(_ app: Application) throws {
         secretAccessKey: Environment.get("MINIO_SECRET_ACCESS_KEY") ?? "vapor_secret_acces")
 
     app.migrations.add(CreateStorageLocation())
+    app.migrations.add(CreateExpiration())
     app.migrations.add(CreateStorageEntity())
     app.routes.defaultMaxBodySize = "10mb"
 

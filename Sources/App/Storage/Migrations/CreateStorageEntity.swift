@@ -14,6 +14,7 @@ struct CreateStorageEntity: Migration {
             .field("name", .string, .required)
             .field("description", .string)
             .field("location", .uuid, .references(StorageLocation.schema, "id"), .required)
+            .field("expiration", .uuid, .references(Expiration.schema, "id", onDelete: .setNull))
             .create()
     }
 
